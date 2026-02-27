@@ -4,6 +4,7 @@ from dateutil import tz
 import yaml
 import feedparser
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from urllib.parse import urlparse
 
 SECTION_RULES = [
     ("Foundry（产能 / 价格 / 客户拉货 / 项目）", {"foundry", "price", "utilization", "capacity", "customers", "projects"}),
@@ -49,7 +50,39 @@ def main():
                 "dt": dt,
                 "published": local_dt.strftime("%Y-%m-%d %H:%M"),
             })
+    # ====== Apply filters from sources.yaml ======
+    flt = cfg.get("filter", {})
+    blocked_domains = set([d.lower().strip() for d in flt.get("blocked_domains", [])])
+    blocked_keywords = [k.lower() for k in flt.get("blocked_keywords", [])]
+    paywall_keywords = [k.lower() for k in flt.get("paywall_keywords", [])]
 
+    def get_domain(link: str) -> str:
+        try:
+            return (urlparse(link).netloc or "").lower()
+        except Exception:
+            return ""
+
+    def hit_keywords(text: str, keywords: list[str]) -> bool:
+        t = (text or "").lower()
+        return any(k in t for k in keywords if k)
+
+    filtered = []
+    for it in items:
+        domain = get_domain(it.get("link", ""))
+        text_blob = f"{it.get('title','')} {it.get('source','')}"
+        # 域名黑名单
+        if domain in blocked_domains:
+            continue
+        # 订阅/注册提示词
+        if hit_keywords(text_blob, paywall_keywords):
+            continue
+        # 噪音关键词（驱动/固件更新等）
+        if hit_keywords(text_blob, blocked_keywords):
+            continue
+        filtered.append(it)
+
+    items = filtered
+    
     items.sort(key=lambda x: x["dt"], reverse=True)
 
     # Top10 = newest across all
@@ -87,6 +120,16 @@ def main():
     tpl = env.get_template("index.html")
 
     generated_at = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
+        # ====== Limit items per section ======
+    max_per = int(cfg.get("display", {}).get("max_items_per_section", 10))
+
+    # sections 通常是 list[dict]，每个 dict 里有 name/title/items
+    # 我们把每个 section["items"] 截断到 max_per
+    for sec in sections:
+        # 兼容两种写法：items 或 ["items"]
+        sec_items = sec.get("items") if isinstance(sec, dict) else None
+        if isinstance(sec_items, list):
+            sec["items"] = sec_items[:max_per]
     html = tpl.render(
         title="Canaan Procurement & Mining Daily Intel",
         generated_at=generated_at,
