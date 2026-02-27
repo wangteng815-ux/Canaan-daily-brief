@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ title }}</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC",sans-serif;margin:0;background:#0b0f14;color:#e8eef6;}
+    header{padding:18px 16px;position:sticky;top:0;background:rgba(11,15,20,.92);backdrop-filter: blur(8px);border-bottom:1px solid rgba(255,255,255,.08);}
+    h1{font-size:18px;margin:0 0 6px 0;}
+    .meta{font-size:12px;opacity:.8;}
+    .wrap{max-width:980px;margin:0 auto;padding:14px 12px 40px;}
+    .card{background:#121823;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;margin:12px 0;}
+    h2{font-size:16px;margin:0 0 10px 0;}
+    a{color:#8ab4ff;text-decoration:none}
+    a:hover{text-decoration:underline}
+    ul{margin:8px 0 0 18px;padding:0}
+    li{margin:8px 0;line-height:1.35}
+    .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(138,180,255,.12);border:1px solid rgba(138,180,255,.25);margin-right:6px;opacity:.95}
+    .small{font-size:12px;opacity:.85}
+    .danger{background:rgba(255,99,132,.12);border-color:rgba(255,99,132,.25)}
+    footer{opacity:.7;font-size:12px;margin-top:18px}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding:0 12px;">
+    <h1>{{ title }}</h1>
+    <div class="meta">生成时间：{{ generated_at }}（{{ timezone }}）</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Top 10（最新）</h2>
+    <ul>
+      {% for it in top10 %}
+      <li>
+        {% for t in it.tags %}<span class="tag">{{ t }}</span>{% endfor %}
+        <a href="{{ it.link }}" target="_blank" rel="noreferrer">{{ it.title }}</a>
+        <div class="small">{{ it.source }} · {{ it.published }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>采购需要重点关注（Need-to-check）</h2>
+    <ul>
+      {% for n in need_to_check %}
+      <li><span class="tag danger">重点</span>{{ n }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {% for section in sections %}
+  <div class="card">
+    <h2>{{ section.name }}</h2>
+    {% for it in section.items %}
+      <div style="margin:10px 0 0 0;">
+        {% for t in it.tags %}<span class="tag">{{ t }}</span>{% endfor %}
+        <a href="{{ it.link }}" target="_blank" rel="noreferrer">{{ it.title }}</a>
+        <div class="small">{{ it.source }} · {{ it.published }}</div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <footer>
+    <div>来源：{% for s in sources %}{{ s }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
+  </footer>
+</div>
+</body>
+</html>
