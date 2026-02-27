@@ -44,6 +44,8 @@ filter:
     - "登录后查看"
     - "订阅后查看"
     - "注册后查看"
+display:
+  max_items_per_section: 10
 feeds:
   # ====== Foundry / Supply chain (high-signal) ======
   - name: "TrendForce - Semiconductors"
