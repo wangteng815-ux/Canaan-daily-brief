@@ -56,7 +56,7 @@
   {% for section in sections %}
   <div class="card">
     <h2>{{ section.name }}</h2>
-    {% for it in section.items %}
+   {% for it in section["items"] %}
       <div style="margin:10px 0 0 0;">
         {% for t in it.tags %}<span class="tag">{{ t }}</span>{% endfor %}
         <a href="{{ it.link }}" target="_blank" rel="noreferrer">{{ it.title }}</a>
