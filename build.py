@@ -98,12 +98,6 @@ def main():
     )
 
     os.makedirs("docs", exist_ok=True)
-    with open("docs/index.html", "w", encoding="utf-8") as f:
-        f.write(html)
-
-    with open("docs/data.json", "w", encoding="utf-8") as f:
-        json.dump({"generated_at": generated_at, "items": items[:300]},
-                  f, ensure_ascii=False, indent=2)
-
+   
 if __name__ == "__main__":
     main()
