@@ -1,5 +1,49 @@
 timezone: Asia/Tokyo
+# ====== Filters ======
+filter:
+  # 域名黑名单：常见“必须订阅/注册/付费”媒体
+  blocked_domains:
+    - digitimes.com
+    - www.digitimes.com
+    - wsj.com
+    - www.wsj.com
+    - bloomberg.com
+    - www.bloomberg.com
+    - ft.com
+    - www.ft.com
+    - nikkei.com
+    - www.nikkei.com
+    - asia.nikkei.com
+    - economist.com
+    - www.economist.com
 
+  # 标题/摘要关键词黑名单（大小写不敏感）
+  # 你提的 AMD driver update 就放这里；也把常见“固件/驱动更新/版本发布”噪音先拦掉
+  blocked_keywords:
+    - "driver update"
+    - "drivers"
+    - "adrenalin"
+    - "radeon software"
+    - "firmware update"
+    - "security update"
+    - "patch tuesday"
+    - "release notes"
+    - "版本更新"
+    - "驱动更新"
+    - "固件更新"
+    - "升级补丁"
+
+  # 可选：如果标题/摘要出现这些词，基本可判断是订阅墙/注册墙提示，直接过滤
+  paywall_keywords:
+    - "subscribe"
+    - "subscription"
+    - "sign in to continue"
+    - "register to read"
+    - "to continue reading"
+    - "join now"
+    - "登录后查看"
+    - "订阅后查看"
+    - "注册后查看"
 feeds:
   # ====== Foundry / Supply chain (high-signal) ======
   - name: "TrendForce - Semiconductors"
