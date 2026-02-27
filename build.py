@@ -98,6 +98,8 @@ def main():
     )
 
     os.makedirs("docs", exist_ok=True)
+    with open("docs/index.html", "w", encoding="utf-8") as f:
+    f.write(html)
    
 if __name__ == "__main__":
     main()
