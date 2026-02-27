@@ -23,37 +23,37 @@ feeds:
   # ====== Google News RSS (keyword nets) ======
   # Tip: keep spaces as '+'. Keep it broad to catch “utilization / wafer price / pull-in orders / N2/N3 / CoWoS”
   - name: "GNews - Foundry Utilization & Capacity"
-    url: "https://news.google.com/rss/search?q=(TSMC+OR+Samsung+Foundry+OR+Intel+Foundry+OR+SMIC+OR+UMC+OR+GlobalFoundries+OR+Tower)+ (utilization+OR+capacity+OR+lead+time+OR+allocation+OR+pull-in+orders)+when:7d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(TSMC+OR+Samsung+Foundry+OR+Intel+Foundry+OR+SMIC+OR+UMC+OR+GlobalFoundries+OR+Tower)+(utilization+OR+capacity+OR+lead+time+OR+allocation+OR+pull-in+orders)+when:7d&hl=en-US&gl=US&ceid=US:en"
     tags: ["foundry", "utilization", "capacity"]
 
   - name: "GNews - Wafer Price / ASP / Surcharge"
-    url: "https://news.google.com/rss/search?q=(wafer+price+OR+foundry+price+OR+ASP+OR+surcharge)+ (8-inch+OR+12-inch+OR+mature+node+OR+N3+OR+N2)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(wafer+price+OR+foundry+price+OR+ASP+OR+surcharge)+(8-inch+OR+12-inch+OR+mature+node+OR+N3+OR+N2)+when:14d&hl=en-US&gl=US&ceid=US:en"
     tags: ["foundry", "price"]
 
   - name: "GNews - MediaTek / Big customers new projects"
-    url: "https://news.google.com/rss/search?q=(MediaTek+OR+MTK+OR+Qualcomm+OR+NVIDIA+OR+Apple+OR+AMD)+ (tapeout+OR+N2+OR+N3+OR+chiplet+OR+CoWoS+OR+InFO+OR+3D+packaging)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(MediaTek+OR+MTK+OR+Qualcomm+OR+NVIDIA+OR+Apple+OR+AMD)+(tapeout+OR+N2+OR+N3+OR+chiplet+OR+CoWoS+OR+InFO+OR+3D+packaging)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["foundry", "customers", "projects"]
 
   - name: "GNews - Foundry supply chain upstream/downstream"
-    url: "https://news.google.com/rss/search?q=(EUV+OR+DUV+OR+ASML+OR+Applied+Materials+OR+Lam+Research+OR+KLA+OR+Tokyo+Electron)+ (fab+OR+capacity+OR+shipment+OR+lead+time)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(EUV+OR+DUV+OR+ASML+OR+Applied+Materials+OR+Lam+Research+OR+KLA+OR+Tokyo+Electron)+(fab+OR+capacity+OR+shipment+OR+lead+time)+when:14d&hl=en-US&gl=US&ceid=US:en"
     tags: ["supplychain"]
 
   - name: "GNews - OSAT / Advanced Packaging"
-    url: "https://news.google.com/rss/search?q=(ASE+OR+Amkor+OR+JCET+OR+SPIL+OR+Huatian+OR+Tongfu)+ (advanced+packaging+OR+CoWoS+OR+2.5D+OR+3D+OR+chiplet)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(ASE+OR+Amkor+OR+JCET+OR+SPIL+OR+Huatian+OR+Tongfu)+(advanced+packaging+OR+CoWoS+OR+2.5D+OR+3D+OR+chiplet)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["osat", "packaging"]
 
   - name: "GNews - EDA & export controls"
-    url: "https://news.google.com/rss/search?q=(Synopsys+OR+Cadence+OR+Siemens+EDA+OR+EDA)+ (export+control+OR+sanction+OR+restriction+OR+license)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(Synopsys+OR+Cadence+OR+Siemens+EDA+OR+EDA)+(export+control+OR+sanction+OR+restriction+OR+license)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["eda", "compliance"]
 
   - name: "GNews - Mining OEMs (Bitmain/MicroBT/Canaan)"
-    url: "https://news.google.com/rss/search?q=(Bitmain+OR+MicroBT+OR+WhatsMiner+OR+Antminer+OR+Canaan)+ (shipment+OR+new+model+OR+factory+OR+tariff+OR+U.S.+production)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(Bitmain+OR+MicroBT+OR+WhatsMiner+OR+Antminer+OR+Canaan)+(shipment+OR+new+model+OR+factory+OR+tariff+OR+U.S.+production)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["miner", "oem"]
 
   - name: "GNews - Bitdeer"
-    url: "https://news.google.com/rss/search?q=(Bitdeer+OR+BTDR)+ (miner+OR+hosting+OR+datacenter+OR+ASIC+OR+earnings)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(Bitdeer+OR+BTDR)+(miner+OR+hosting+OR+datacenter+OR+ASIC+OR+earnings)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["miner", "company"]
 
   - name: "GNews - Major miners / mining farms"
-    url: "https://news.google.com/rss/search?q=(Marathon+Digital+OR+Riot+Platforms+OR+CleanSpark+OR+IREN+OR+Cipher+Mining)+ (hashrate+OR+capex+OR+hosting+OR+power+price+OR+curtailment)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(Marathon+Digital+OR+Riot+Platforms+OR+CleanSpark+OR+IREN+OR+Cipher+Mining)+(hashrate+OR+capex+OR+hosting+OR+power+price+OR+curtailment)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["miner", "farms"]
