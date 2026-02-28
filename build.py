@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from dateutil import tz
 import yaml
 import feedparser
-import requests
+import urllib.request
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from urllib.parse import urlparse
 
@@ -38,13 +38,13 @@ def main():
         tags = feed.get("tags", [])
         sources.append(name)
         try:
-            resp = requests.get(
-                url,
-                timeout=12,
-                headers={"User-Agent": "Mozilla/5.0"}
+            req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0"}
             )
-            resp.raise_for_status()
-            parsed = feedparser.parse(resp.content)
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = resp.read()
+            parsed = feedparser.parse(data)
         except Exception as e:
             print(f"Feed failed: {url} -> {e}")
             parsed = feedparser.parse(b"")
