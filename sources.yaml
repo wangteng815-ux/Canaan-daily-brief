@@ -59,6 +59,67 @@ filter:
 display:
   max_items_per_section: 10
 feeds:
+  # ======= Official Foundries =======
+  - name: "TSMC - Press Releases"
+    url: "https://www.tsmc.com/english/rss"
+    tags: ["foundry"]
+
+  - name: "Samsung Semiconductor - News"
+    url: "https://semiconductor.samsung.com/rss/news.xml"
+    tags: ["foundry"]
+
+  - name: "Intel Foundry - Newsroom"
+    url: "https://www.intel.com/content/www/us/en/newsroom/rss-feed.html"
+    tags: ["foundry"]
+
+  - name: "GlobalFoundries - News"
+    url: "https://gf.com/feed/"
+    tags: ["foundry"]
+
+  # ======= Equipment Makers =======
+  - name: "ASML - News"
+    url: "https://www.asml.com/en/news/rss"
+    tags: ["equipment", "foundry"]
+
+  - name: "Applied Materials - News"
+    url: "https://news.appliedmaterials.com/rss"
+    tags: ["equipment"]
+
+  - name: "Lam Research - Newsroom"
+    url: "https://newsroom.lamresearch.com/rss"
+    tags: ["equipment"]
+
+  - name: "KLA - News"
+    url: "https://ir.kla.com/rss/news-releases.xml"
+    tags: ["equipment"]
+
+  # ======= Industry Media (Technical) =======
+  - name: "Semiconductor Engineering"
+    url: "https://semiengineering.com/feed/"
+    tags: ["foundry", "technology"]
+
+  - name: "EE Times - Semiconductor"
+    url: "https://www.eetimes.com/category/semiconductors/feed/"
+    tags: ["foundry", "technology"]
+
+  - name: "The Register - Chips"
+    url: "https://www.theregister.com/chip_design/headlines.atom"
+    tags: ["technology"]
+
+  # ======= Industry Associations =======
+  - name: "SEMI - Industry News"
+    url: "https://www.semi.org/en/news-resources/rss.xml"
+    tags: ["foundry", "equipment", "supplychain"]
+
+  # ======= Broader Google Industry Mix =======
+  - name: "GNews - Semiconductor Industry"
+    url: "https://news.google.com/rss/search?q=(semiconductor+industry+OR+fab+expansion+OR+advanced+node+OR+chip+manufacturing)+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry"]
+
+  - name: "GNews - Chip Equipment"
+    url: "https://news.google.com/rss/search?q=(ASML+OR+Applied+Materials+OR+Lam+Research+OR+KLA)+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["equipment"]
+    
   # ====== Foundry / Supply chain (high-signal) ======
   - name: "TrendForce - Semiconductors"
     url: "https://www.trendforce.com/feed/Semiconductors.html"
