@@ -73,6 +73,18 @@ feeds:
     url: "https://news.google.com/rss/search?q=3nm+yield+TSMC+Samsung+production+volume&hl=en-US&gl=US&ceid=US:en"
     tags: ["foundry", "yield", "advanced_node"]
     
+  - name: "Semiconductor Engineering - Advanced Node"
+    url: "https://semiengineering.com/tag/3nm/feed/"
+    tags: ["advanced_node", "technology"]
+
+  - name: "EE Times - Process Technology"
+    url: "https://www.eetimes.com/category/design/process-technology/feed/"
+    tags: ["advanced_node", "technology"]
+
+  - name: "DigiTimes - Advanced Process"
+    url: "https://www.digitimes.com/rss/advanced_process.xml"
+    tags: ["advanced_node", "foundry"]
+    
   # ===== High-Quality Industry Media =====
 
   - name: "Semiconductor Engineering"
