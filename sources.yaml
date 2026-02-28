@@ -59,6 +59,20 @@ filter:
 display:
   max_items_per_section: 10
 feeds:
+  # ===== Sub-5nm Foundry Monitor =====
+
+  - name: "GNews - TSMC Sub-5nm"
+    url: "https://news.google.com/rss/search?q=TSMC+(5nm+OR+4nm+OR+3nm+OR+2nm+OR+1.4nm)+yield+capacity+utilization+customer&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "advanced_node", "tsmc"]
+
+  - name: "GNews - Samsung Sub-5nm"
+    url: "https://news.google.com/rss/search?q=Samsung+Foundry+(5nm+OR+4nm+OR+3nm+OR+2nm)+yield+capacity+utilization+customer&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "advanced_node", "samsung"]
+
+  - name: "GNews - 3nm Yield Monitor"
+    url: "https://news.google.com/rss/search?q=3nm+yield+TSMC+Samsung+production+volume&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "yield", "advanced_node"]
+    
   # ===== High-Quality Industry Media =====
 
   - name: "Semiconductor Engineering"
