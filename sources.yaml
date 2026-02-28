@@ -32,6 +32,18 @@ filter:
     - "驱动更新"
     - "固件更新"
     - "升级补丁"
+    - "stocks to buy"
+    - "stock to buy"
+    - "should you buy"
+    - "is it too late to buy"
+    - "before they skyrocket"
+    - "price target"
+    - "analyst says buy"
+    - "strong buy rating"
+    - "top nasdaq stocks"
+    - "growth stocks to buy"
+    - "best stocks for"
+    - "undervalued stock"
 
   # 可选：如果标题/摘要出现这些词，基本可判断是订阅墙/注册墙提示，直接过滤
   paywall_keywords:
