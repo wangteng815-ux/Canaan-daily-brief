@@ -59,6 +59,44 @@ filter:
 display:
   max_items_per_section: 10
 feeds:
+  # ===== High-Quality Industry Media =====
+
+  - name: "Semiconductor Engineering"
+    url: "https://semiengineering.com/feed/"
+    tags: ["foundry", "technology", "advanced_node"]
+
+  - name: "EE Times - Semiconductors"
+    url: "https://www.eetimes.com/category/semiconductors/feed/"
+    tags: ["foundry", "technology"]
+
+  - name: "The Register - Chip Design"
+    url: "https://www.theregister.com/chip_design/headlines.atom"
+    tags: ["industry", "technology"]
+
+  - name: "TechInsights Blog"
+    url: "https://www.techinsights.com/blog/rss.xml"
+    tags: ["analysis", "foundry", "market"]
+
+  - name: "SemiWiki"
+    url: "https://semiwiki.com/feed/"
+    tags: ["eda", "design", "ip"]
+
+  - name: "HPCwire"
+    url: "https://www.hpcwire.com/feed/"
+    tags: ["ai", "hpc", "advanced_packaging"]
+
+  - name: "DigiTimes - Semiconductor"
+    url: "https://www.digitimes.com/rss/semiconductors.xml"
+    tags: ["foundry", "taiwan", "supplychain"]
+
+  - name: "Tom's Hardware - Semiconductor"
+    url: "https://www.tomshardware.com/feeds/all"
+    tags: ["technology"]
+
+  - name: "IC Insights"
+    url: "https://www.icinsights.com/rss/"
+    tags: ["market", "capacity"]
+    
   # ======= Official Foundries =======
   - name: "TSMC - Press Releases"
     url: "https://www.tsmc.com/english/rss"
