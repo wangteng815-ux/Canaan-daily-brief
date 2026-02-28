@@ -51,7 +51,20 @@ feeds:
   - name: "TrendForce - Semiconductors"
     url: "https://www.trendforce.com/feed/Semiconductors.html"
     tags: ["foundry", "price", "utilization", "supplychain"]
+    
+  # ======= Strategic Regulation Watch (US export controls / sanctions) =======
+  - name: "BIS - Press Releases (Official)"
+    url: "https://www.bis.doc.gov/index.php/documents/press-releases?format=feed"
+    tags: ["strategic_regulation", "export_control", "compliance"]
 
+  - name: "Federal Register - BIS (Rules)"
+    url: "https://www.federalregister.gov/agencies/bureau-of-industry-and-security.rss"
+    tags: ["strategic_regulation", "export_control", "compliance"]
+
+  - name: "GNews - US Chip Export Controls"
+    url: "https://news.google.com/rss/search?q=(BIS+OR+%22Bureau+of+Industry+and+Security%22+OR+%22export+control%22+OR+%22entity+list%22+OR+sanctions+OR+%22advanced+computing%22+OR+EDA+OR+%22semiconductor+manufacturing+equipment%22)+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["strategic_regulation", "export_control", "compliance"]
+    
   # ====== EDA (simple) ======
   - name: "Synopsys - News Releases RSS"
     url: "https://news.synopsys.com/rss?c=20324"
