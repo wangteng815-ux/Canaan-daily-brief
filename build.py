@@ -49,33 +49,59 @@ def main():
             print(f"Feed failed: {url} -> {e}")
             parsed = feedparser.parse(b"")
         for e in parsed.entries[:60]:
-                # ===== Foundry 噪音过滤（股票/荐股/财经站）=====
-            title = (getattr(e, "title", "") or "").lower()
-            link  = (getattr(e, "link", "") or "").lower()
 
-    # 1) 股票荐股高频词（标题含这些就直接丢）
-            stock_noise_keywords = [
-                "stock", "stocks", "shares", "price target", "should you buy",
-                "is the stock", "a buy", "strong buy", "buy now",
-                "analyst", "rating", "wall street", "nasdaq", "nyse",
-                "rally", "soars", "surges", "plunges",
-                "undervalued", "overvalued"
-            ]
-
-    # 2) 站点黑名单（link 里包含这些域名/标识就丢）
-        stock_noise_domains = [
-            "aol.com", "www.aol.com",
-            "adhocnews", "zacks.com", "seekingalpha", "fool.com",
-            "benzinga", "marketwatch"
-        ]
-        if any(d in link for d in stock_noise_domains):
-            continue
             dt = pick_dt(e) or datetime.now(timezone.utc)
             local_dt = dt.astimezone(local_tz)
 
+            raw_title = getattr(e, "title", "") or ""
+            raw_link  = getattr(e, "link", "") or ""
+
+            title_l = raw_title.lower()
+            link_l  = raw_link.lower()
+
+            # ===== 优先获取真实媒体来源（GNews RSS 有 source）=====
+            src_href = ""
+            try:
+                src = getattr(e, "source", None)
+                if isinstance(src, dict):
+                    src_href = src.get("href", "") or ""
+                else:
+                    src_href = getattr(src, "href", "") or ""
+            except Exception:
+                src_href = ""
+
+            # 优先用 source.href 获取真实域名
+            real_domain = get_domain(src_href or raw_link)
+            real_domain = real_domain.replace("www.", "")
+
+            # ===== 1️⃣ 域名黑名单（来自 sources.yaml）=====
+            if real_domain in blocked_domains:
+                continue
+
+            # ===== 2️⃣ 标题/摘要关键字黑名单 =====
+            summary = getattr(e, "summary", "") or ""
+            text_l = (raw_title + " " + summary).lower()
+            if any(k in text_l for k in blocked_keywords):
+                continue
+
+            # ===== 3️⃣ Foundry 专用股票降噪（不会全空）=====
+            stock_noise_domains = {
+                "aol.com",
+                "zacks.com",
+                "fool.com",
+                "seekingalpha.com",
+                "marketwatch.com",
+                "benzinga.com",
+                "adhocnews.de",
+                "openpr.com"
+            }
+
+            if real_domain in stock_noise_domains:
+                continue
+
             items.append({
-                "title": clean(getattr(e, "title", "")) or "(no title)",
-                "link": getattr(e, "link", ""),
+                "title": clean(raw_title) or "(no title)",
+                "link": raw_link,
                 "source": name,
                 "tags": tags,
                 "dt": dt,
