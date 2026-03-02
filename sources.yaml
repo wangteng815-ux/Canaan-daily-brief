@@ -1,7 +1,12 @@
 timezone: Asia/Tokyo
+
+display:
+  max_items_per_section: 10
+  lookback_days: 7
+
 # ====== Filters ======
 filter:
-  # 域名黑名单：常见“必须订阅/注册/付费”媒体
+  # 域名黑名单：常见“必须订阅/注册/付费”媒体 + 你明确不想要的股票站
   blocked_domains:
     - digitimes.com
     - www.digitimes.com
@@ -22,8 +27,8 @@ filter:
     - www.adhocnews.de
 
   # 标题/摘要关键词黑名单（大小写不敏感）
-  # 你提的 AMD driver update 就放这里；也把常见“固件/驱动更新/版本发布”噪音先拦掉
   blocked_keywords:
+    # 驱动/固件/版本更新噪音
     - "driver update"
     - "drivers"
     - "adrenalin"
@@ -36,6 +41,8 @@ filter:
     - "驱动更新"
     - "固件更新"
     - "升级补丁"
+
+    # 股票/投研噪音
     - "stocks"
     - "should you buy"
     - "is it too late to buy"
@@ -47,8 +54,13 @@ filter:
     - "growth stocks to buy"
     - "best stocks for"
     - "undervalued stock"
+    - "market cap"
+    - "shares surged"
+    - "stock pops"
+    - "downgrade"
+    - "upgrade"
 
-  # 可选：如果标题/摘要出现这些词，基本可判断是订阅墙/注册墙提示，直接过滤
+  # 如果标题/摘要出现这些词，基本可判断是订阅墙/注册墙提示，直接过滤
   paywall_keywords:
     - "subscribe"
     - "subscription"
@@ -59,200 +71,211 @@ filter:
     - "登录后查看"
     - "订阅后查看"
     - "注册后查看"
-display:
-  max_items_per_section: 10
+
 feeds:
-  # ===== Sub-5nm Foundry Monitor =====
-
+  # =========================================================
+  # Sub-5nm Foundry Monitor (TSMC / Samsung / <5nm)
+  # =========================================================
   - name: "GNews - TSMC Sub-5nm"
-    url: "https://news.google.com/rss/search?q=TSMC+(5nm+OR+4nm+OR+3nm+OR+2nm+OR+1.4nm)+yield+capacity+utilization+customer&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry", "advanced_node", "tsmc"]
+    url: "https://news.google.com/rss/search?q=TSMC+(5nm+OR+4nm+OR+3nm+OR+2nm+OR+1.4nm)+yield+capacity+utilization+customer+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "capacity", "utilization", "customers", "projects"]
 
-  - name: "GNews - Samsung Sub-5nm"
-    url: "https://news.google.com/rss/search?q=Samsung+Foundry+(5nm+OR+4nm+OR+3nm+OR+2nm)+yield+capacity+utilization+customer&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry", "advanced_node", "samsung"]
+  - name: "GNews - Samsung Foundry Sub-5nm"
+    url: "https://news.google.com/rss/search?q=%22Samsung+Foundry%22+(5nm+OR+4nm+OR+3nm+OR+2nm)+yield+capacity+utilization+customer+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "capacity", "utilization", "customers", "projects"]
 
   - name: "GNews - 3nm Yield Monitor"
-    url: "https://news.google.com/rss/search?q=3nm+yield+TSMC+Samsung+production+volume&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry", "yield", "advanced_node"]
-    
-  - name: "Semiconductor Engineering - Advanced Node"
-    url: "https://semiengineering.com/tag/3nm/feed/"
-    tags: ["advanced_node", "technology"]
+    url: "https://news.google.com/rss/search?q=3nm+yield+TSMC+Samsung+production+volume+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "yield", "projects"]
 
-  - name: "EE Times - Process Technology"
-    url: "https://www.eetimes.com/category/design/process-technology/feed/"
-    tags: ["advanced_node", "technology"]
-
-  - name: "DigiTimes - Advanced Process"
-    url: "https://www.digitimes.com/rss/advanced_process.xml"
-    tags: ["advanced_node", "foundry"]
-    
-  # ===== High-Quality Industry Media =====
-
-  - name: "Semiconductor Engineering"
+  # =========================================================
+  # High-Quality Industry Media (Foundry / Tech)
+  # =========================================================
+  - name: "Semiconductor Engineering - Main Feed"
     url: "https://semiengineering.com/feed/"
-    tags: ["foundry", "technology", "advanced_node"]
+    tags: ["foundry", "supplychain", "osat", "packaging", "eda"]
+
+  - name: "Semiconductor Engineering - 3nm Tag"
+    url: "https://semiengineering.com/tag/3nm/feed/"
+    tags: ["foundry", "projects", "yield"]
 
   - name: "EE Times - Semiconductors"
     url: "https://www.eetimes.com/category/semiconductors/feed/"
-    tags: ["foundry", "technology"]
+    tags: ["foundry", "supplychain", "osat", "packaging", "eda"]
+
+  - name: "EE Times - Process Technology"
+    url: "https://www.eetimes.com/category/design/process-technology/feed/"
+    tags: ["foundry", "projects", "yield"]
 
   - name: "The Register - Chip Design"
     url: "https://www.theregister.com/chip_design/headlines.atom"
-    tags: ["industry", "technology"]
+    tags: ["foundry", "eda", "compliance"]
 
   - name: "TechInsights Blog"
     url: "https://www.techinsights.com/blog/rss.xml"
-    tags: ["analysis", "foundry", "market"]
+    tags: ["foundry", "supplychain", "market"]
 
   - name: "SemiWiki"
     url: "https://semiwiki.com/feed/"
-    tags: ["eda", "design", "ip"]
+    tags: ["foundry", "eda", "ip", "supplychain"]
 
   - name: "HPCwire"
     url: "https://www.hpcwire.com/feed/"
-    tags: ["ai", "hpc", "advanced_packaging"]
+    tags: ["customers", "projects", "packaging"]
 
-  - name: "DigiTimes - Semiconductor"
-    url: "https://www.digitimes.com/rss/semiconductors.xml"
-    tags: ["foundry", "taiwan", "supplychain"]
-
-  - name: "Tom's Hardware - Semiconductor"
+  - name: "Tom's Hardware - All"
     url: "https://www.tomshardware.com/feeds/all"
-    tags: ["technology"]
+    tags: ["foundry", "supplychain", "eda", "packaging"]
 
+  # IC Insights RSS 站点不一定稳定；留着不影响（抓不到会在 action log 里提示）
   - name: "IC Insights"
     url: "https://www.icinsights.com/rss/"
     tags: ["market", "capacity"]
-    
-  # ======= Official Foundries =======
+
+  # =========================================================
+  # Official Foundries
+  # =========================================================
   - name: "TSMC - Press Releases"
     url: "https://www.tsmc.com/english/rss"
-    tags: ["foundry"]
+    tags: ["foundry", "projects", "capacity"]
 
   - name: "Samsung Semiconductor - News"
     url: "https://semiconductor.samsung.com/rss/news.xml"
-    tags: ["foundry"]
+    tags: ["foundry", "projects", "capacity"]
 
   - name: "Intel Foundry - Newsroom"
     url: "https://www.intel.com/content/www/us/en/newsroom/rss-feed.html"
-    tags: ["foundry"]
+    tags: ["foundry", "projects", "capacity"]
 
   - name: "GlobalFoundries - News"
     url: "https://gf.com/feed/"
-    tags: ["foundry"]
+    tags: ["foundry", "projects", "capacity"]
 
-  # ======= Equipment Makers =======
+  # =========================================================
+  # Equipment Makers
+  # =========================================================
   - name: "ASML - News"
     url: "https://www.asml.com/en/news/rss"
-    tags: ["equipment", "foundry"]
+    tags: ["supplychain", "equipment"]
 
   - name: "Applied Materials - News"
     url: "https://news.appliedmaterials.com/rss"
-    tags: ["equipment"]
+    tags: ["supplychain", "equipment"]
 
   - name: "Lam Research - Newsroom"
     url: "https://newsroom.lamresearch.com/rss"
-    tags: ["equipment"]
+    tags: ["supplychain", "equipment"]
 
   - name: "KLA - News"
     url: "https://ir.kla.com/rss/news-releases.xml"
-    tags: ["equipment"]
+    tags: ["supplychain", "equipment"]
 
-  # ======= Industry Media (Technical) =======
-  - name: "Semiconductor Engineering"
-    url: "https://semiengineering.com/feed/"
-    tags: ["foundry", "technology"]
-
-  - name: "EE Times - Semiconductor"
-    url: "https://www.eetimes.com/category/semiconductors/feed/"
-    tags: ["foundry", "technology"]
-
-  - name: "The Register - Chips"
-    url: "https://www.theregister.com/chip_design/headlines.atom"
-    tags: ["technology"]
-
-  # ======= Industry Associations =======
+  # =========================================================
+  # Industry Associations
+  # =========================================================
   - name: "SEMI - Industry News"
     url: "https://www.semi.org/en/news-resources/rss.xml"
-    tags: ["foundry", "equipment", "supplychain"]
+    tags: ["foundry", "supplychain", "equipment", "osat", "packaging"]
 
-  # ======= Broader Google Industry Mix =======
-  - name: "GNews - Semiconductor Industry"
+  # =========================================================
+  # Broader Google Industry Mix (补网)
+  # =========================================================
+  - name: "GNews - Semiconductor Industry Mix"
     url: "https://news.google.com/rss/search?q=(semiconductor+industry+OR+fab+expansion+OR+advanced+node+OR+chip+manufacturing)+when:7d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry"]
+    tags: ["foundry", "supplychain", "capacity"]
 
-  - name: "GNews - Chip Equipment"
-    url: "https://news.google.com/rss/search?q=(ASML+OR+Applied+Materials+OR+Lam+Research+OR+KLA)+when:7d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["equipment"]
-    
-  # ====== Foundry / Supply chain (high-signal) ======
+  - name: "GNews - Chip Equipment Mix"
+    url: "https://news.google.com/rss/search?q=(ASML+OR+%22Applied+Materials%22+OR+%22Lam+Research%22+OR+KLA+OR+Tokyo+Electron)+when:7d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["supplychain", "equipment"]
+
+  # =========================================================
+  # Foundry / Supply chain (High-signal, TrendForce)
+  # =========================================================
   - name: "TrendForce - Semiconductors"
     url: "https://www.trendforce.com/feed/Semiconductors.html"
     tags: ["foundry", "price", "utilization", "supplychain"]
-    
-  # ======= Strategic Regulation Watch (US export controls / sanctions) =======
+
+  # =========================================================
+  # Strategic Regulation Watch (US export controls / sanctions)
+  # 重要：tag 用 compliance/export/entitylist/sanctions 对齐 build.py
+  # =========================================================
   - name: "BIS - Press Releases (Official)"
     url: "https://www.bis.doc.gov/index.php/documents/press-releases?format=feed"
-    tags: ["strategic_regulation", "export_control", "compliance"]
+    tags: ["compliance", "export", "entitylist", "sanctions"]
 
   - name: "Federal Register - BIS (Rules)"
     url: "https://www.federalregister.gov/agencies/bureau-of-industry-and-security.rss"
-    tags: ["strategic_regulation", "export_control", "compliance"]
+    tags: ["compliance", "export", "entitylist", "sanctions"]
 
-  - name: "GNews - US Chip Export Controls"
-    url: "https://news.google.com/rss/search?q=(BIS+OR+%22Bureau+of+Industry+and+Security%22+OR+%22export+control%22+OR+%22entity+list%22+OR+sanctions+OR+%22advanced+computing%22+OR+EDA+OR+%22semiconductor+manufacturing+equipment%22)+when:7d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["strategic_regulation", "export_control", "compliance"]
-    
-  # ====== EDA (simple) ======
-  - name: "Synopsys - News Releases RSS"
+  - name: "GNews - US Chip Export Controls / Entity List"
+    url: "https://news.google.com/rss/search?q=(BIS+OR+%22Bureau+of+Industry+and+Security%22+OR+%22export+control%22+OR+%22entity+list%22+OR+sanctions+OR+FDPR+OR+OFAC)+(semiconductor+OR+chip+OR+EDA+OR+AI+GPU+OR+HBM+OR+%22semiconductor+manufacturing+equipment%22)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["compliance", "export", "entitylist", "sanctions"]
+
+  # =========================================================
+  # EDA (official + keyword nets)
+  # =========================================================
+  - name: "Synopsys - News Releases"
     url: "https://news.synopsys.com/rss?c=20324"
     tags: ["eda"]
 
-  - name: "Cadence - RSS (Main)"
+  - name: "Cadence - RSS"
     url: "https://www.cadence.com/ja_JP/home/rss-feeds/_jcr_content/par/feed_2110208331.xml"
     tags: ["eda"]
 
-  # ====== Your company / mining ======
-  - name: "Canaan IR - News Releases RSS"
+  - name: "GNews - EDA (Synopsys/Cadence/Siemens)"
+    url: "https://news.google.com/rss/search?q=(Synopsys+OR+Cadence+OR+%22Siemens+EDA%22+OR+Mentor)+(EDA+OR+verification+OR+signoff+OR+PDK+OR+IP)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["eda"]
+
+  # =========================================================
+  # Your company / mining (Canaan + industry)
+  # =========================================================
+  - name: "Canaan IR - News Releases"
     url: "https://investor.canaan-creative.com/rss/news-releases.xml"
     tags: ["miner", "company"]
 
-  # ====== Google News RSS (keyword nets) ======
-  # Tip: keep spaces as '+'. Keep it broad to catch “utilization / wafer price / pull-in orders / N2/N3 / CoWoS”
-  - name: "GNews - Foundry Utilization & Capacity"
-    url: "https://news.google.com/rss/search?q=(TSMC+OR+Samsung+Foundry+OR+Intel+Foundry+OR+SMIC+OR+UMC+OR+GlobalFoundries+OR+Tower)+(utilization+OR+capacity+OR+lead+time+OR+allocation+OR+pull-in+orders)+when:7d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry", "utilization", "capacity"]
-
-  - name: "GNews - Wafer Price / ASP / Surcharge"
-    url: "https://news.google.com/rss/search?q=(wafer+price+OR+foundry+price+OR+ASP+OR+surcharge)+(8-inch+OR+12-inch+OR+mature+node+OR+N3+OR+N2)+when:14d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry", "price"]
-
-  - name: "GNews - MediaTek / Big customers new projects"
-    url: "https://news.google.com/rss/search?q=(MediaTek+OR+MTK+OR+Qualcomm+OR+NVIDIA+OR+Apple+OR+AMD)+(tapeout+OR+N2+OR+N3+OR+chiplet+OR+CoWoS+OR+InFO+OR+3D+packaging)+when:30d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["foundry", "customers", "projects"]
-
-  - name: "GNews - Foundry supply chain upstream/downstream"
-    url: "https://news.google.com/rss/search?q=(EUV+OR+DUV+OR+ASML+OR+Applied+Materials+OR+Lam+Research+OR+KLA+OR+Tokyo+Electron)+(fab+OR+capacity+OR+shipment+OR+lead+time)+when:14d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["supplychain"]
-
-  - name: "GNews - OSAT / Advanced Packaging"
-    url: "https://news.google.com/rss/search?q=(ASE+OR+Amkor+OR+JCET+OR+SPIL+OR+Huatian+OR+Tongfu)+(advanced+packaging+OR+CoWoS+OR+2.5D+OR+3D+OR+chiplet)+when:30d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["osat", "packaging"]
-
-  - name: "GNews - EDA & export controls"
-    url: "https://news.google.com/rss/search?q=(Synopsys+OR+Cadence+OR+Siemens+EDA+OR+EDA)+(export+control+OR+sanction+OR+restriction+OR+license)+when:30d&hl=en-US&gl=US&ceid=US:en"
-    tags: ["eda", "compliance"]
-
   - name: "GNews - Mining OEMs (Bitmain/MicroBT/Canaan)"
-    url: "https://news.google.com/rss/search?q=(Bitmain+OR+MicroBT+OR+WhatsMiner+OR+Antminer+OR+Canaan)+(shipment+OR+new+model+OR+factory+OR+tariff+OR+U.S.+production)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    url: "https://news.google.com/rss/search?q=(Bitmain+OR+MicroBT+OR+WhatsMiner+OR+Antminer+OR+Canaan)+(shipment+OR+new+model+OR+factory+OR+tariff+OR+production)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["miner", "oem"]
 
   - name: "GNews - Bitdeer"
     url: "https://news.google.com/rss/search?q=(Bitdeer+OR+BTDR)+(miner+OR+hosting+OR+datacenter+OR+ASIC+OR+earnings)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["miner", "company"]
 
-  - name: "GNews - Major miners / mining farms"
+  - name: "GNews - Major Miners / Mining Farms"
     url: "https://news.google.com/rss/search?q=(Marathon+Digital+OR+Riot+Platforms+OR+CleanSpark+OR+IREN+OR+Cipher+Mining)+(hashrate+OR+capex+OR+hosting+OR+power+price+OR+curtailment)+when:30d&hl=en-US&gl=US&ceid=US:en"
     tags: ["miner", "farms"]
+
+  # =========================================================
+  # Your keyword nets (foundry / price / customers / supply chain / osat)
+  # =========================================================
+  - name: "GNews - Foundry Utilization & Capacity"
+    url: "https://news.google.com/rss/search?q=(TSMC+OR+%22Samsung+Foundry%22+OR+%22Intel+Foundry%22+OR+SMIC+OR+UMC+OR+GlobalFoundries+OR+Tower)+(utilization+OR+capacity+OR+lead+time+OR+allocation+OR+pull-in+orders)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "utilization", "capacity"]
+
+  - name: "GNews - Wafer Price / ASP / Surcharge"
+    url: "https://news.google.com/rss/search?q=(wafer+price+OR+foundry+price+OR+ASP+OR+surcharge)+(8-inch+OR+12-inch+OR+mature+node+OR+N3+OR+N2)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "price"]
+
+  - name: "GNews - Big Customers Projects (MTK/Qualcomm/NVIDIA/Apple/AMD)"
+    url: "https://news.google.com/rss/search?q=(MediaTek+OR+MTK+OR+Qualcomm+OR+NVIDIA+OR+Apple+OR+AMD)+(tapeout+OR+tape-out+OR+N2+OR+N3+OR+chiplet+OR+CoWoS+OR+InFO+OR+3D+packaging)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["foundry", "customers", "projects"]
+
+  - name: "GNews - Foundry Supply Chain (EUV/DUV/Tools)"
+    url: "https://news.google.com/rss/search?q=(EUV+OR+DUV+OR+ASML+OR+%22Applied+Materials%22+OR+%22Lam+Research%22+OR+KLA+OR+%22Tokyo+Electron%22)+(fab+OR+capacity+OR+shipment+OR+lead+time)+when:14d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["supplychain"]
+
+  - name: "GNews - OSAT / Advanced Packaging (ASE/Amkor/JCET)"
+    url: "https://news.google.com/rss/search?q=(ASE+OR+Amkor+OR+JCET+OR+SPIL+OR+Huatian+OR+Tongfu)+(advanced+packaging+OR+CoWoS+OR+2.5D+OR+3D+OR+chiplet)+when:30d&hl=en-US&gl=US&ceid=US:en"
+    tags: ["osat", "packaging"]
+
+  # =========================================================
+  # IMPORTANT: DigiTimes feeds removed because digitimes.com is blocked above.
+  # If you want DigiTimes, remove digitimes.com from filter.blocked_domains.
+  # =========================================================
+  # - name: "DigiTimes - Advanced Process"
+  #   url: "https://www.digitimes.com/rss/advanced_process.xml"
+  #   tags: ["foundry", "projects", "capacity"]
+  #
+  # - name: "DigiTimes - Semiconductor"
+  #   url: "https://www.digitimes.com/rss/semiconductors.xml"
+  #   tags: ["foundry", "supplychain"]
