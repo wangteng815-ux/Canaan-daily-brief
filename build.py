@@ -150,11 +150,92 @@ def main():
         ]
 
     # ===== Section 分类 =====
+        # ====== 相关性打分：每个板块挑 10 条最相关 ======
+    def relevance_score(it: dict, sec_name: str) -> int:
+        """
+        分数越高越相关。规则很简单：命中关键词加分 + 越新稍微加分
+        """
+        title = (it.get("title") or "").lower()
+        # 如果你后面把 summary 存进 items，也可以一起用
+        text = title
+
+        # 通用“产业相关”加分（压掉纯股评）
+        industry_boost = [
+            "utilization", "capacity", "wafer", "lead time", "leadtime", "allocation",
+            "2nm", "3nm", "4nm", "5nm", "gate-all-around", "gaa", "n2", "a14",
+            "yield", "ramp", "hvm", "risk production",
+            "cowos", "inFO".lower(), "fo-wlp".lower(), "chiplet", "advanced packaging",
+            "export control", "bis", "sanction", "entity list",
+            "siemens", "synopsys", "cadence", "eda"
+        ]
+
+        score = 0
+        for k in industry_boost:
+            if k in text:
+                score += 3
+
+        # 板块关键词加分（你关心：TSMC/Samsung foundry、5nm以下、利用率、客户）
+        sec_kw = {
+            "Foundry（产能 / 价格 / 客户拉货 / 项目）": [
+                "tsmc", "taiwan semiconductor", "samsung foundry", "samsung",
+                "utilization", "capacity", "fab", "ramp", "yield", "wafer",
+                "n2", "2nm", "3nm", "4nm", "5nm", "gaa", "gate-all-around",
+                "customer", "order", "pull-in", "pull in", "demand", "allocation",
+                "hpc", "ai", "nvidia", "apple", "qualcomm", "amd"
+            ],
+            "Foundry 产业链（设备/材料/上下游）": [
+                "asml", "applied materials", "lam research", "tokyo electron", "tel",
+                "kokusai", "screen", "kLA".lower(),
+                "photoresist", "euv", "duv", "mask", "pellicle",
+                "slurry", "gas", "chemical", "substrate", "silicon wafer"
+            ],
+            "OSAT / Advanced Packaging": [
+                "tsmc", "cowos", "inFO".lower(), "soic", "hybrid bonding",
+                "amkor", "ase", "spil", "jcet", "tfme".lower(), "hbm",
+                "substrate", "abf", "advanced packaging", "test", "burn-in"
+            ],
+            "EDA（含合规/出口管制）": [
+                "synopsys", "cadence", "siemens eda", "mentor",
+                "export control", "bis", "entity list", "sanction", "compliance"
+            ],
+            "矿机 / 矿厂（Bitmain/MicroBT/Canaan/Bitdeer等）": [
+                "canaan", "bitmain", "microbt", "whatsminer", "bitdeer",
+                "hashrate", "difficulty", "block reward", "halving",
+                "miner", "asic", "t21", "s21", "m60".lower(),
+                "public miner", "marathon", "riot", "cleanSpark".lower(), "hut 8".lower()
+            ],
+        }.get(sec_name, [])
+
+        for k in sec_kw:
+            if k in text:
+                score += 10
+
+        # 越新稍微加分（避免很老的“高分词”霸榜）
+        dt = it.get("dt")
+        if isinstance(dt, datetime):
+            age_hours = (datetime.now(timezone.utc) - dt).total_seconds() / 3600.0
+            if age_hours < 24:
+                score += 6
+            elif age_hours < 72:
+                score += 3
+            elif age_hours < 168:
+                score += 1
+
+        return score
+
     sections = []
     for sec_name, sec_tags in SECTION_RULES:
-        sec_items = [it for it in items if sec_tags.intersection(set(it["tags"]))][:40]
-        sections.append({"name": sec_name, "items": sec_items})
+        # 先按 tag 进这个板块
+        pool = [it for it in items if sec_tags.intersection(set(it.get("tags", [])))]
 
+        # 再按“相关性”排序（高分在前），同分按时间新在前
+        pool.sort(
+            key=lambda it: (relevance_score(it, sec_name), it.get("dt")),
+            reverse=True
+        )
+
+        # 每个板块只取前 max_per 条（你 sources.yaml 里已经是 10）
+        sections.append({"name": sec_name, "items": pool[:max_per]})
     env = Environment(loader=FileSystemLoader("templates"),
                       autoescape=select_autoescape(["html"]))
     tpl = env.get_template("index.html")
