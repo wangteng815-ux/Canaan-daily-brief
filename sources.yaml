@@ -16,6 +16,10 @@ filter:
     - asia.nikkei.com
     - economist.com
     - www.economist.com
+    - aol.com
+    - www.aol.com
+    - adhocnews.de
+    - www.adhocnews.de
 
   # 标题/摘要关键词黑名单（大小写不敏感）
   # 你提的 AMD driver update 就放这里；也把常见“固件/驱动更新/版本发布”噪音先拦掉
