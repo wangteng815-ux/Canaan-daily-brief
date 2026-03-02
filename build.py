@@ -1,7 +1,6 @@
 import os
 import re
-import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 import urllib.request
 
@@ -65,13 +64,13 @@ def fetch_feed(url: str, timeout: int = 12) -> bytes:
 
 
 # =========================
-# Relevance scoring
+# Noise filters & relevance
 # =========================
 STOCK_NOISE_KEYWORDS = [
     "stock", "stocks", "shares", "is the stock", "should you buy", "buy now", "strong buy",
     "price target", "rating", "analyst", "wall street", "nasdaq", "nyse", "rally", "surges",
     "plunges", "soars", "undervalued", "overvalued", "earnings preview", "dividend",
-    "why this", "top ", "best ", "to buy", "to sell",
+    "top ", "best ", "to buy", "to sell",
 ]
 
 STOCK_NOISE_DOMAINS = {
@@ -89,13 +88,12 @@ STOCK_NOISE_DOMAINS = {
     "openpr.com",
 }
 
-# 你关心的：Samsung Foundry / TSMC，5nm 以下、利用率、客户、拉货等
 FOUNDRY_SIGNAL_KEYWORDS = [
     "utilization", "capacity", "capacity utilization", "loadings", "wafer starts",
     "lead time", "allocation", "tight", "shortage", "bottleneck",
     "5nm", "4nm", "3nm", "2nm", "n3", "n2",
-    "tsmc", "samsung foundry", "samsung", "gfs", "intel foundry", "if",
-    "coWoS".lower(), "inFO".lower(), "soic", "chiplet",
+    "tsmc", "samsung foundry", "samsung", "gfs", "intel foundry",
+    "cowos", "info", "soic", "chiplet",
     "pull-in", "pull in", "order", "bookings", "backlog",
     "customer", "tape-out", "tape out", "design win",
 ]
@@ -103,7 +101,7 @@ FOUNDRY_SIGNAL_KEYWORDS = [
 OSAT_KEYWORDS = [
     "osat", "packaging", "advanced packaging", "2.5d", "3d", "fan-out", "fan out",
     "substrate", "abf", "flip chip", "bumping", "wlcsp", "test", "ate",
-    "coWoS".lower(), "hybrid bonding", "tsv",
+    "cowos", "hybrid bonding", "tsv",
 ]
 
 EDA_KEYWORDS = [
@@ -114,16 +112,16 @@ EDA_KEYWORDS = [
 
 MINING_KEYWORDS = [
     "canaan", "bitmain", "microbt", "whatsminer", "antminer",
-    "bitdeer", "marathon", "riot", "cleanSpark".lower(), "hive", "hut 8", "core scientific",
+    "bitdeer", "marathon", "riot", "cleanspark", "hive", "hut 8", "core scientific",
     "hashrate", "difficulty", "halving", "mining", "miner",
     "immersion", "hosting", "power", "ppa", "tariff",
 ]
 
 
-def relevance_score(section_name: str, text_l: str, domain: str) -> int:
+def base_relevance_score(section_name: str, text_l: str, domain: str) -> int:
     score = 0
 
-    # 先扣股票噪音
+    # 股票噪音先扣
     if domain in STOCK_NOISE_DOMAINS:
         score -= 10
     if hit_keywords(text_l, STOCK_NOISE_KEYWORDS):
@@ -134,7 +132,6 @@ def relevance_score(section_name: str, text_l: str, domain: str) -> int:
     if "foundry" in sec and "产业链" not in section_name:
         if hit_keywords(text_l, FOUNDRY_SIGNAL_KEYWORDS):
             score += 10
-        # 你明确要 5nm 以下：有这些给高分
         if any(k in text_l for k in ["3nm", "2nm", "4nm", "5nm", "n2", "n3"]):
             score += 8
         if any(k in text_l for k in ["utilization", "capacity", "lead time", "allocation", "pull-in", "order"]):
@@ -143,8 +140,8 @@ def relevance_score(section_name: str, text_l: str, domain: str) -> int:
             score += 5
 
     elif "产业链" in section_name:
-        # 产业链：设备/材料/上游
-        if any(k in text_l for k in ["asml", "lam", "applied materials", "klaus", "tokyo electron", "tel", "kokusai", "screen", "jsr", "sumco", "abf", "substrate"]):
+        if any(k in text_l for k in ["asml", "lam", "applied materials", "tokyo electron", "tel", "kokusai", "screen",
+                                     "jsr", "sumco", "substrate", "abf"]):
             score += 7
         if any(k in text_l for k in ["export", "restriction", "ban", "controls", "license"]):
             score += 3
@@ -168,6 +165,35 @@ def relevance_score(section_name: str, text_l: str, domain: str) -> int:
     return score
 
 
+def recency_score(dt_utc: datetime, now_utc: datetime, lookback_days: int) -> int:
+    """
+    只在 lookback 窗口内评分；越新分越高。
+    - 0~24h: +12
+    - 1~2d: +10
+    - 2~3d: +8
+    - 3~5d: +6
+    - 5~7d: +4
+    - 超出窗口: -999 (直接丢掉)
+    """
+    age = now_utc - dt_utc
+    if age < timedelta(0):
+        age = timedelta(0)
+
+    if age > timedelta(days=lookback_days):
+        return -999
+
+    hours = age.total_seconds() / 3600.0
+    if hours <= 24:
+        return 12
+    if hours <= 48:
+        return 10
+    if hours <= 72:
+        return 8
+    if hours <= 120:
+        return 6
+    return 4
+
+
 # =========================
 # Main
 # =========================
@@ -178,14 +204,17 @@ def main():
     tz_name = cfg.get("timezone", "Asia/Tokyo")
     local_tz = tz.gettz(tz_name)
 
-    # ---- filters from sources.yaml
     flt = cfg.get("filter", {}) or {}
     blocked_domains = set([str(d).lower().strip().replace("www.", "") for d in flt.get("blocked_domains", []) if d])
     blocked_keywords = [str(k).lower() for k in flt.get("blocked_keywords", []) if k]
     paywall_keywords = [str(k).lower() for k in flt.get("paywall_keywords", []) if k]
 
-    # ---- display config
-    max_per = int((cfg.get("display", {}) or {}).get("max_items_per_section", 10))
+    display = cfg.get("display", {}) or {}
+    max_per = int(display.get("max_items_per_section", 10))
+    lookback_days = int(display.get("lookback_days", 7))
+
+    now_utc = datetime.now(timezone.utc)
+    cutoff_utc = now_utc - timedelta(days=lookback_days)
 
     items = []
     sources = []
@@ -207,8 +236,12 @@ def main():
             print(f"Feed failed: {url} -> {e}")
             parsed = feedparser.parse(b"")
 
-        for e in (parsed.entries or [])[:80]:
-            dt = pick_dt(e) or datetime.now(timezone.utc)
+        for e in (parsed.entries or [])[:120]:
+            dt = pick_dt(e) or now_utc
+            if dt < cutoff_utc:
+                # 直接丢掉：你要“1周内”
+                continue
+
             local_dt = dt.astimezone(local_tz)
 
             raw_title = getattr(e, "title", "") or ""
@@ -239,35 +272,30 @@ def main():
             if hit_keywords(text_l, blocked_keywords):
                 continue
 
-            # ---- extra: drop strong stock-only domains & phrases (but won't kill all content)
-            if real_domain in STOCK_NOISE_DOMAINS:
-                # 仅当标题/摘要也像股票稿时才丢，避免误杀
-                if hit_keywords(text_l, STOCK_NOISE_KEYWORDS):
-                    continue
-            else:
-                # 不是股票域，但标题很像股票稿，也丢
-                if hit_keywords(text_l, STOCK_NOISE_KEYWORDS) and not any(k in text_l for k in ["wafer", "foundry", "tsmc", "samsung", "3nm", "2nm", "4nm", "5nm"]):
-                    continue
+            # ---- stock noise: 强噪音直接丢
+            if real_domain in STOCK_NOISE_DOMAINS and hit_keywords(text_l, STOCK_NOISE_KEYWORDS):
+                continue
 
+            # ---- record
             items.append({
                 "title": clean(raw_title) or "(no title)",
                 "link": raw_link,
-                "source": name,          # your feed name
-                "real_domain": real_domain,  # publisher domain if available
+                "source": name,
+                "real_domain": real_domain,
                 "tags": tags,
                 "dt": dt,
                 "published": local_dt.strftime("%Y-%m-%d %H:%M"),
                 "summary": clean(summary),
             })
 
-    # ---- sort newest
+    # ---- sort newest overall
     items.sort(key=lambda x: x["dt"], reverse=True)
 
-    # ---- Top10 newest overall
+    # ---- Top10 newest overall (仍然只会来自 7 天窗口，因为旧的已丢)
     top10 = items[:10]
 
-    # ---- Need-to-check (simple signals)
-    title_blob = " ".join([(it.get("title", "") + " " + it.get("summary", "")).lower() for it in items[:80]])
+    # ---- Need-to-check
+    title_blob = " ".join([(it.get("title", "") + " " + it.get("summary", "")).lower() for it in items[:120]])
     need_to_check = []
     signals = [
         ("utilization", "出现“utilization/产能利用率”信号：重点看 TSMC / Samsung Foundry 在 5nm-2nm 的紧张程度。"),
@@ -282,14 +310,13 @@ def main():
     for k, msg in signals:
         if k in title_blob:
             need_to_check.append(msg)
-
     if not need_to_check:
         need_to_check = [
             "每天看三件事：① 利用率/交期（紧不紧）② wafer/封装价格（涨不涨）③ 大客户项目与拉货（快不快）",
             "如果出现：配额/拉货/涨价/出口管制 任一关键词 → 当天拉相关源做二次确认（官方/研究机构优先）。",
         ]
 
-    # ---- sections: pick TOP relevant per section (not just newest)
+    # ---- sections: within 1 week, rank by (relevance + recency)
     sections = []
     for sec_name, sec_tags in SECTION_RULES:
         pool = []
@@ -297,14 +324,24 @@ def main():
             it_tags = set(it.get("tags", []) or [])
             if not sec_tags.intersection(it_tags):
                 continue
+
+            dt = it.get("dt") or now_utc
+            rcy = recency_score(dt, now_utc, lookback_days)
+            if rcy < -100:
+                continue  # 超出窗口（理论上前面已经丢）
+
             text_l = (it.get("title", "") + " " + it.get("summary", "")).lower()
             domain = (it.get("real_domain") or safe_domain(it.get("link", ""))).lower()
-            score = relevance_score(sec_name, text_l, domain)
-            pool.append((score, it))
 
-        # sort by score first, then by time
-        pool.sort(key=lambda x: (x[0], x[1].get("dt")), reverse=True)
-        chosen = [it for score, it in pool[:max_per]]
+            rel = base_relevance_score(sec_name, text_l, domain)
+            total = rel + rcy
+
+            pool.append((total, rel, rcy, dt, it))
+
+        # 排序：总分 > 时间（防止同分时老的靠前）
+        pool.sort(key=lambda x: (x[0], x[3]), reverse=True)
+        chosen = [it for total, rel, rcy, dt, it in pool[:max_per]]
+
         sections.append({"name": sec_name, "items": chosen})
 
     # ---- render
