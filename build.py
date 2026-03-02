@@ -61,8 +61,6 @@ def main():
                 "rally", "soars", "surges", "plunges",
                 "undervalued", "overvalued"
             ]
-            if any(k in title for k in stock_noise_keywords):
-                continue
 
     # 2) 站点黑名单（link 里包含这些域名/标识就丢）
         stock_noise_domains = [
