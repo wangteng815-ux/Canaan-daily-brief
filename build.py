@@ -1,4 +1,4 @@
-import os, re, json
+import os, re
 from datetime import datetime, timezone
 from dateutil import tz
 import yaml
@@ -15,6 +15,18 @@ SECTION_RULES = [
     ("矿机 / 矿厂（Bitmain/MicroBT/Canaan/Bitdeer等）", {"miner", "oem", "farms", "company"}),
 ]
 
+# ===== 股票站强力过滤 =====
+STOCK_NOISE_DOMAINS = {
+    "aol.com", "zacks.com", "fool.com", "seekingalpha.com",
+    "marketwatch.com", "benzinga.com", "adhocnews.de", "openpr.com"
+}
+
+STOCK_NOISE_KEYWORDS = {
+    "stock", "stocks", "shares", "price target", "should you buy",
+    "strong buy", "rating", "analyst", "nasdaq", "nyse",
+    "wall street", "rally", "soars", "plunges"
+}
+
 def clean(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip())
 
@@ -24,6 +36,12 @@ def pick_dt(entry):
         return None
     return datetime(*t[:6], tzinfo=timezone.utc)
 
+def get_domain(link: str) -> str:
+    try:
+        return (urlparse(link).netloc or "").lower().replace("www.", "")
+    except Exception:
+        return ""
+
 def main():
     with open("sources.yaml", "r", encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
@@ -31,35 +49,38 @@ def main():
     tz_name = cfg.get("timezone", "Asia/Tokyo")
     local_tz = tz.gettz(tz_name)
 
+    # ===== 读取 filter（提前定义，避免变量未定义）=====
+    flt = cfg.get("filter", {})
+    blocked_domains = set(d.lower().replace("www.", "") for d in flt.get("blocked_domains", []))
+    blocked_keywords = [k.lower() for k in flt.get("blocked_keywords", [])]
+    paywall_keywords = [k.lower() for k in flt.get("paywall_keywords", [])]
+
     items, sources = [], []
 
     for feed in cfg.get("feeds", []):
         name, url = feed["name"], feed["url"]
         tags = feed.get("tags", [])
         sources.append(name)
+
         try:
-            req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "Mozilla/5.0"}
-            )
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=12) as resp:
                 data = resp.read()
             parsed = feedparser.parse(data)
         except Exception as e:
             print(f"Feed failed: {url} -> {e}")
             parsed = feedparser.parse(b"")
+
         for e in parsed.entries[:60]:
 
-            dt = pick_dt(e) or datetime.now(timezone.utc)
-            local_dt = dt.astimezone(local_tz)
-
             raw_title = getattr(e, "title", "") or ""
-            raw_link  = getattr(e, "link", "") or ""
+            raw_link = getattr(e, "link", "") or ""
+            summary = getattr(e, "summary", "") or ""
 
             title_l = raw_title.lower()
-            link_l  = raw_link.lower()
+            text_blob = (raw_title + " " + summary).lower()
 
-            # ===== 优先获取真实媒体来源（GNews RSS 有 source）=====
+            # ===== 获取真实域名 =====
             src_href = ""
             try:
                 src = getattr(e, "source", None)
@@ -67,37 +88,29 @@ def main():
                     src_href = src.get("href", "") or ""
                 else:
                     src_href = getattr(src, "href", "") or ""
-            except Exception:
-                src_href = ""
+            except:
+                pass
 
-            # 优先用 source.href 获取真实域名
-            real_domain = (urlparse(src_href or raw_link).netloc or "").lower()
-            real_domain = real_domain.replace("www.", "")
-        
-            # ===== 1️⃣ 域名黑名单（来自 sources.yaml）=====
-            if real_domain in blocked_domains:
+            domain = get_domain(src_href or raw_link)
+
+            # ===== 过滤顺序 =====
+            if domain in blocked_domains:
                 continue
 
-            # ===== 2️⃣ 标题/摘要关键字黑名单 =====
-            summary = getattr(e, "summary", "") or ""
-            text_l = (raw_title + " " + summary).lower()
-            if any(k in text_l for k in blocked_keywords):
+            if domain in STOCK_NOISE_DOMAINS:
                 continue
 
-            # ===== 3️⃣ Foundry 专用股票降噪（不会全空）=====
-            stock_noise_domains = {
-                "aol.com",
-                "zacks.com",
-                "fool.com",
-                "seekingalpha.com",
-                "marketwatch.com",
-                "benzinga.com",
-                "adhocnews.de",
-                "openpr.com"
-            }
-
-            if real_domain in stock_noise_domains:
+            if any(k in text_blob for k in blocked_keywords):
                 continue
+
+            if any(k in text_blob for k in paywall_keywords):
+                continue
+
+            if any(k in title_l for k in STOCK_NOISE_KEYWORDS):
+                continue
+
+            dt = pick_dt(e) or datetime.now(timezone.utc)
+            local_dt = dt.astimezone(local_tz)
 
             items.append({
                 "title": clean(raw_title) or "(no title)",
@@ -107,66 +120,36 @@ def main():
                 "dt": dt,
                 "published": local_dt.strftime("%Y-%m-%d %H:%M"),
             })
-    # ====== Apply filters from sources.yaml ======
-    flt = cfg.get("filter", {})
-    blocked_domains = set([d.lower().strip() for d in flt.get("blocked_domains", [])])
-    blocked_keywords = [k.lower() for k in flt.get("blocked_keywords", [])]
-    paywall_keywords = [k.lower() for k in flt.get("paywall_keywords", [])]
 
-    def get_domain(link: str) -> str:
-        try:
-            return (urlparse(link).netloc or "").lower()
-        except Exception:
-            return ""
-
-    def hit_keywords(text: str, keywords: list[str]) -> bool:
-        t = (text or "").lower()
-        return any(k in t for k in keywords if k)
-
-    filtered = []
-    for it in items:
-        domain = get_domain(it.get("link", ""))
-        text_blob = f"{it.get('title','')} {it.get('source','')}"
-        # 域名黑名单
-        if domain in blocked_domains:
-            continue
-        # 订阅/注册提示词
-        if hit_keywords(text_blob, paywall_keywords):
-            continue
-        # 噪音关键词（驱动/固件更新等）
-        if hit_keywords(text_blob, blocked_keywords):
-            continue
-        filtered.append(it)
-
-    items = filtered
-    
+    # ===== 排序 =====
     items.sort(key=lambda x: x["dt"], reverse=True)
 
-    # Top10 = newest across all
     top10 = items[:10]
 
-    # Need-to-check: heuristics on titles
+    # ===== Need-to-check =====
     title_blob = " ".join([it["title"].lower() for it in items[:50]])
     need_to_check = []
+
     patterns = [
-        ("utilization", "出现“utilization/产能利用率”信号：建议对照你关心的节点/厂别，判断是否进入紧张或去库阶段。"),
-        ("price", "出现“price/ASP/surcharge”信号：建议记录涨幅/节点/客户范围，准备议价与锁量策略。"),
-        ("pull-in", "出现“pull-in orders/拉货/提前下单”信号：建议核对大客户项目节奏与交期波动。"),
-        ("allocation", "出现“allocation/配额”信号：建议检查关键工艺/封装资源是否被AI挤占。"),
-        ("export control", "出现“export control/制裁/限制”信号：建议马上评估EDA与供应链合规风险。"),
-        ("coWoS".lower(), "出现“CoWoS/先进封装”信号：建议关注封装产能、良率与排产窗口。"),
+        ("utilization", "出现利用率信号：判断是否紧张或去库。"),
+        ("price", "出现价格信号：记录涨幅与节点范围。"),
+        ("pull-in", "出现拉货信号：核对大客户节奏。"),
+        ("allocation", "出现配额信号：关注AI是否挤占产能。"),
+        ("export control", "出现出口管制信号：评估合规风险。"),
+        ("cowos", "出现先进封装信号：关注CoWoS产能。"),
     ]
+
     for k, msg in patterns:
         if k in title_blob:
             need_to_check.append(msg)
 
     if not need_to_check:
         need_to_check = [
-            "每天看三件事：① 利用率/交期（紧不紧）② wafer/封装价格（涨不涨）③ 大客户项目与拉货（快不快）",
-            "如果出现：配额/拉货/涨价/出口管制任一关键词 → 当天拉相关源做二次确认（官方/研究机构优先）。",
+            "每天看三件事：① 利用率 ② 价格 ③ 拉货节奏",
+            "出现配额/涨价/出口限制 → 当天做二次确认。"
         ]
 
-    # Sections by tag match
+    # ===== Section 分类 =====
     sections = []
     for sec_name, sec_tags in SECTION_RULES:
         sec_items = [it for it in items if sec_tags.intersection(set(it["tags"]))][:40]
@@ -177,16 +160,7 @@ def main():
     tpl = env.get_template("index.html")
 
     generated_at = datetime.now(local_tz).strftime("%Y-%m-%d %H:%M")
-        # ====== Limit items per section ======
-    max_per = int(cfg.get("display", {}).get("max_items_per_section", 10))
 
-    # sections 通常是 list[dict]，每个 dict 里有 name/title/items
-    # 我们把每个 section["items"] 截断到 max_per
-    for sec in sections:
-        # 兼容两种写法：items 或 ["items"]
-        sec_items = sec.get("items") if isinstance(sec, dict) else None
-        if isinstance(sec_items, list):
-            sec["items"] = sec_items[:max_per]
     html = tpl.render(
         title="Canaan Procurement & Mining Daily Intel",
         generated_at=generated_at,
@@ -200,6 +174,6 @@ def main():
     os.makedirs("docs", exist_ok=True)
     with open("docs/index.html", "w", encoding="utf-8") as f:
         f.write(html)
-   
+
 if __name__ == "__main__":
     main()
