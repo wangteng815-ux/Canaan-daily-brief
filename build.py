@@ -71,9 +71,9 @@ def main():
                 src_href = ""
 
             # 优先用 source.href 获取真实域名
-            real_domain = get_domain(src_href or raw_link)
+            real_domain = (urlparse(src_href or raw_link).netloc or "").lower()
             real_domain = real_domain.replace("www.", "")
-
+        
             # ===== 1️⃣ 域名黑名单（来自 sources.yaml）=====
             if real_domain in blocked_domains:
                 continue
