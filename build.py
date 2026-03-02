@@ -93,7 +93,7 @@ FOUNDRY_SIGNAL_KEYWORDS = [
     "lead time", "allocation", "tight", "shortage", "bottleneck",
     "5nm", "4nm", "3nm", "2nm", "n3", "n2",
     "tsmc", "samsung foundry", "samsung", "gfs", "intel foundry",
-    "cowos", "info", "soic", "chiplet",
+    "cowos", "soic", "chiplet",
     "pull-in", "pull in", "order", "bookings", "backlog",
     "customer", "tape-out", "tape out", "design win",
 ]
@@ -194,6 +194,18 @@ def recency_score(dt_utc: datetime, now_utc: datetime, lookback_days: int) -> in
     return 4
 
 
+def compute_section_score(sec_name: str, it: dict, now_utc: datetime, lookback_days: int) -> int:
+    dt = it.get("dt") or now_utc
+    rcy = recency_score(dt, now_utc, lookback_days)
+    if rcy < -100:
+        return -999
+
+    text_l = (it.get("title", "") + " " + it.get("summary", "")).lower()
+    domain = (it.get("real_domain") or safe_domain(it.get("link", ""))).lower()
+    rel = base_relevance_score(sec_name, text_l, domain)
+    return rel + rcy
+
+
 # =========================
 # Main
 # =========================
@@ -239,8 +251,7 @@ def main():
         for e in (parsed.entries or [])[:120]:
             dt = pick_dt(e) or now_utc
             if dt < cutoff_utc:
-                # 直接丢掉：你要“1周内”
-                continue
+                continue  # 直接丢：只要 1 周内
 
             local_dt = dt.astimezone(local_tz)
 
@@ -276,7 +287,6 @@ def main():
             if real_domain in STOCK_NOISE_DOMAINS and hit_keywords(text_l, STOCK_NOISE_KEYWORDS):
                 continue
 
-            # ---- record
             items.append({
                 "title": clean(raw_title) or "(no title)",
                 "link": raw_link,
@@ -288,11 +298,32 @@ def main():
                 "summary": clean(summary),
             })
 
-    # ---- sort newest overall
+    # ---- newest overall
     items.sort(key=lambda x: x["dt"], reverse=True)
 
-    # ---- Top10 newest overall (仍然只会来自 7 天窗口，因为旧的已丢)
-    top10 = items[:10]
+    # =========================
+    # Top10: 先“打分筛选”，再“按时间排序展示”
+    # =========================
+    # 对每条新闻，取它在所有 section 里的最高分作为“全局相关性分”
+    scored = []
+    for it in items:
+        best = None
+        for sec_name, _ in SECTION_RULES:
+            s = compute_section_score(sec_name, it, now_utc, lookback_days)
+            if best is None or s > best:
+                best = s
+        best = best if best is not None else -999
+        if best < -100:
+            continue
+        scored.append((best, it["dt"], it))
+
+    # 先按分数选 Top10（避免“最新但无关”）
+    scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    top10_pool = [it for _, __, it in scored[:10]]
+
+    # 展示时：按时间最新在前（你要的）
+    top10_pool.sort(key=lambda x: x["dt"], reverse=True)
+    top10 = top10_pool
 
     # ---- Need-to-check
     title_blob = " ".join([(it.get("title", "") + " " + it.get("summary", "")).lower() for it in items[:120]])
@@ -316,7 +347,10 @@ def main():
             "如果出现：配额/拉货/涨价/出口管制 任一关键词 → 当天拉相关源做二次确认（官方/研究机构优先）。",
         ]
 
-    # ---- sections: within 1 week, rank by (relevance + recency)
+    # =========================
+    # Sections: 1周内 + 打分选 max_per
+    # 展示顺序：按时间最新在前（你要的“每天新增在最上面”）
+    # =========================
     sections = []
     for sec_name, sec_tags in SECTION_RULES:
         pool = []
@@ -325,22 +359,18 @@ def main():
             if not sec_tags.intersection(it_tags):
                 continue
 
-            dt = it.get("dt") or now_utc
-            rcy = recency_score(dt, now_utc, lookback_days)
-            if rcy < -100:
-                continue  # 超出窗口（理论上前面已经丢）
+            total = compute_section_score(sec_name, it, now_utc, lookback_days)
+            if total < -100:
+                continue
 
-            text_l = (it.get("title", "") + " " + it.get("summary", "")).lower()
-            domain = (it.get("real_domain") or safe_domain(it.get("link", ""))).lower()
+            pool.append((total, it["dt"], it))
 
-            rel = base_relevance_score(sec_name, text_l, domain)
-            total = rel + rcy
+        # 先按分数选 max_per
+        pool.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        chosen = [it for _, __, it in pool[:max_per]]
 
-            pool.append((total, rel, rcy, dt, it))
-
-        # 排序：总分 > 时间（防止同分时老的靠前）
-        pool.sort(key=lambda x: (x[0], x[3]), reverse=True)
-        chosen = [it for total, rel, rcy, dt, it in pool[:max_per]]
+        # 展示：按时间降序（最新在前）
+        chosen.sort(key=lambda x: x["dt"], reverse=True)
 
         sections.append({"name": sec_name, "items": chosen})
 
