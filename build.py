@@ -49,6 +49,29 @@ def main():
             print(f"Feed failed: {url} -> {e}")
             parsed = feedparser.parse(b"")
         for e in parsed.entries[:60]:
+                # ===== Foundry 噪音过滤（股票/荐股/财经站）=====
+            title = (getattr(e, "title", "") or "").lower()
+            link  = (getattr(e, "link", "") or "").lower()
+
+    # 1) 股票荐股高频词（标题含这些就直接丢）
+            stock_noise_keywords = [
+                "stock", "stocks", "shares", "price target", "should you buy",
+                "is the stock", "a buy", "strong buy", "buy now",
+                "analyst", "rating", "wall street", "nasdaq", "nyse",
+                "rally", "soars", "surges", "plunges",
+                "undervalued", "overvalued"
+            ]
+            if any(k in title for k in stock_noise_keywords):
+                continue
+
+    # 2) 站点黑名单（link 里包含这些域名/标识就丢）
+        stock_noise_domains = [
+            "aol.com", "www.aol.com",
+            "adhocnews", "zacks.com", "seekingalpha", "fool.com",
+            "benzinga", "marketwatch"
+        ]
+        if any(d in link for d in stock_noise_domains):
+            continue
             dt = pick_dt(e) or datetime.now(timezone.utc)
             local_dt = dt.astimezone(local_tz)
 
